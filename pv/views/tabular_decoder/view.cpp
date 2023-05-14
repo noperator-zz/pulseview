@@ -351,7 +351,6 @@ void View::restore_settings(QSettings &settings)
 void View::reset_data()
 {
 	signal_ = nullptr;
-	decoder_ = nullptr;
 }
 
 void View::update_data()
@@ -363,7 +362,6 @@ void View::save_data_as_csv(unsigned int save_type) const
 {
 	// Note: We try to follow RFC 4180 (https://tools.ietf.org/html/rfc4180)
 
-	assert(decoder_);
 	assert(signal_);
 
 	if (!signal_)
@@ -459,12 +457,12 @@ void View::on_selected_decoder_changed(int index)
 
 	reset_data();
 
-	decoder_ = (Decoder*)decoder_selector_->itemData(index).value<void*>();
+	const data::decode::Decoder* decoder = (Decoder*)decoder_selector_->itemData(index).value<void*>();
 
 	// Find the signal that contains the selected decoder
 	for (const shared_ptr<DecodeSignal>& ds : decode_signals_)
 		for (const shared_ptr<Decoder>& dec : ds->decoder_stack())
-			if (decoder_ == dec.get())
+			if (decoder == dec.get())
 				signal_ = ds.get();
 
 	if (signal_) {

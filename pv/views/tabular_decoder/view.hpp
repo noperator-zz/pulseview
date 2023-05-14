@@ -211,7 +211,6 @@ private:
 	CustomFilterProxyModel* filter_proxy_model_;
 
 	data::DecodeSignal* signal_;
-	const data::decode::Decoder* decoder_;
 };
 
 } // namespace tabular_decoder
