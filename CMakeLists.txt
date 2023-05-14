@@ -20,6 +20,7 @@
 ##
 
 cmake_minimum_required(VERSION 2.8.12)
+set (CMAKE_VERBOSE_MAKEFILE 1)
 
 project(pulseview C CXX)
 
@@ -674,6 +675,7 @@ if(WIN32 AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 endif()
 
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-fuse-ld=mold")
 #===============================================================================
 #= Installation
 #-------------------------------------------------------------------------------
