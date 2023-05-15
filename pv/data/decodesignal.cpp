@@ -134,10 +134,13 @@ void DecodeSignal::remove_decoder(int index)
 
 	shared_ptr<Decoder> dec = *iter;
 
-	decoder_removed(dec.get());
-
 	// Delete the element
 	stack_.erase(iter);
+
+	// NOTE This used to be called before erase(). Unsure if this change breaks anything...
+	//  Justification is that anyone receiving the `decoder_removed` signal probably expects the decoder
+	//  to have already been removed from the stack.
+	decoder_removed(dec.get());
 
 	// Update channels and decoded data
 	stack_config_changed_ = true;

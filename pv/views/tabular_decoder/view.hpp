@@ -27,6 +27,8 @@
 #include <QSortFilterProxyModel>
 #include <QTableView>
 #include <QToolButton>
+#include <QMenu>
+#include <QPushButton>
 
 #include "pv/metadata_obj.hpp"
 #include "pv/views/viewbase.hpp"
@@ -174,6 +176,7 @@ private:
 
 private Q_SLOTS:
 	void on_selected_signal_changed(int index);
+	void on_selected_classes_changed(int index);
 	void on_hide_hidden_changed(bool checked);
 	void on_view_mode_changed(int index);
 
@@ -200,6 +203,8 @@ private:
 	QWidget* parent_;
 
 	QComboBox* signal_selector_;
+	QMenu* class_selector_;
+	QPushButton* class_selector_button_;
 	QCheckBox* hide_hidden_cb_;
 	QComboBox* view_mode_selector_;
 
