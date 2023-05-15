@@ -151,6 +151,9 @@ void CustomTableView::keyPressEvent(QKeyEvent *event)
 }
 
 
+// TODO:
+//  settings integration
+
 View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	ViewBase(session, is_main_view, parent),
 
@@ -205,7 +208,7 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	auto *const class_selector_popup = new popups::TabularClasses(session, this, class_selector_);
 	class_selector_button_.set_popup(class_selector_popup);
 	class_selector_button_.setToolTip(tr("Configure Channels"));
-	class_selector_button_.setIcon(QIcon(":/icons/channels.svg"));
+	class_selector_button_.setIcon(QIcon(":/icons/settings-general.png"));
 	class_selector_button_.setDisabled(hide_hidden_cb_->checkState());
 
 	for (int i = 0; i < ViewModeCount; i++)
@@ -401,9 +404,10 @@ void View::update_selectors(const data::DecodeSignal* signal)
 						AnnotationClassId id {{dec->get_stack_level(), static_cast<uint32_t>(cls->id)}};
 						item->setData(Qt::UserRole, QVariant::fromValue(id.id));
 						item->setText(option);
-						// TODO repopulate selection status from model cache instead of defaulting to checked
-						item->setSelected(true);
 						class_selector_->addItem(item);
+						// TODO repopulate selection status from model cache instead of defaulting to checked
+						// NOTE oddly this has to be called _after_ addItem(), else it is not selected.
+						item->setSelected(true);
 					}
 				}
 			}
