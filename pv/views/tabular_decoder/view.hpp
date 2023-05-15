@@ -168,11 +168,12 @@ public:
 private:
 	void reset_data();
 	void update_data();
+	void update_selectors(const data::DecodeSignal* signal);
 
 	void save_data_as_csv(unsigned int save_type) const;
 
 private Q_SLOTS:
-	void on_selected_decoder_changed(int index);
+	void on_selected_signal_changed(int index);
 	void on_hide_hidden_changed(bool checked);
 	void on_view_mode_changed(int index);
 
@@ -181,8 +182,7 @@ private Q_SLOTS:
 	void on_new_annotations();
 
 	void on_decoder_reset();
-	void on_decoder_stacked(void* decoder);
-	void on_decoder_removed(void* decoder);
+	void on_decoder_stack_changed(void* decoder);
 
 	void on_actionSave_triggered(QAction* action = nullptr);
 
@@ -199,7 +199,7 @@ private Q_SLOTS:
 private:
 	QWidget* parent_;
 
-	QComboBox* decoder_selector_;
+	QComboBox* signal_selector_;
 	QCheckBox* hide_hidden_cb_;
 	QComboBox* view_mode_selector_;
 
