@@ -27,6 +27,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QPushButton>
+#include <QListWidgetItem>
 #include <QMessageBox>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -156,8 +157,8 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	// Note: Place defaults in View::reset_view_state(), not here
 	parent_(parent),
 	signal_selector_(new QComboBox()),
-	class_selector_(new QMenu()),
-	class_selector_button_(new QPushButton("Annotations")),
+	class_selector_(new QListWidget()),
+	class_selector_button_(new PopupToolButton(this)),
 	hide_hidden_cb_(new QCheckBox()),
 	view_mode_selector_(new QComboBox()),
 	save_button_(new QToolButton()),
@@ -185,12 +186,12 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	toolbar->addWidget(view_mode_selector_);
 	toolbar->addSeparator();
 	toolbar->addWidget(hide_hidden_cb_);
-	toolbar->addWidget(class_selector_button_);
+	toolbar->addWidget(&class_selector_button_);
 
 	connect(signal_selector_, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(on_selected_signal_changed(int)));
-	connect(class_selector_, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(on_selected_classes_changed(int)));
+	connect(class_selector_, SIGNAL(itemSelectionChanged()),
+			this, SLOT(on_selected_classes_changed()));
 	connect(view_mode_selector_, SIGNAL(currentIndexChanged(int)),
 		this, SLOT(on_view_mode_changed(int)));
 	connect(hide_hidden_cb_, SIGNAL(toggled(bool)),
@@ -199,15 +200,19 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	// Configure widgets
 	signal_selector_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
-	class_selector_button_->setMenu(class_selector_);
+	class_selector_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+	auto *const class_selector_popup = new popups::TabularClasses(session, this, class_selector_);
+	class_selector_button_.set_popup(class_selector_popup);
+	class_selector_button_.setToolTip(tr("Configure Channels"));
+	class_selector_button_.setIcon(QIcon(":/icons/channels.svg"));
+	class_selector_button_.setDisabled(hide_hidden_cb_->checkState());
 
 	for (int i = 0; i < ViewModeCount; i++)
 		view_mode_selector_->addItem(ViewModeNames[i], QVariant::fromValue(i));
 
 	hide_hidden_cb_->setText(tr("Hide Hidden Rows/Classes"));
 	hide_hidden_cb_->setChecked(true);
-
-	class_selector_button_->setDisabled(hide_hidden_cb_->checkState());
 
 	// Configure actions
 	save_action_->setText(tr("&Save..."));
@@ -301,15 +306,15 @@ void View::clear_decode_signals()
 
 void View::add_decode_signal(shared_ptr<data::DecodeSignal> signal)
 {
-	qDebug("add_decode_signal =%p +%p", signal_, signal.get());
+	qDebug("%s =%p +%p", __func__, signal_, signal.get());
 	ViewBase::add_decode_signal(signal);
 
 	connect(signal.get(), SIGNAL(name_changed(const QString&)),
 		this, SLOT(on_signal_name_changed(const QString&)));
 
 	// Note: At time of initial creation, decode signals have no decoders so we
-	// need to watch for decoder stacking events
-
+	//  need to watch for decoder stacking events
+	// NOTE: We only care about these events for the selected signal, but currently we connect it for every signal
 	connect(signal.get(), SIGNAL(decoder_stacked(void*)),
 		this, SLOT(on_decoder_stack_changed(void*)));
 	connect(signal.get(), SIGNAL(decoder_removed(void*)),
@@ -320,7 +325,7 @@ void View::add_decode_signal(shared_ptr<data::DecodeSignal> signal)
 
 void View::remove_decode_signal(shared_ptr<data::DecodeSignal> signal)
 {
-	qDebug("update_selectors =%p -%p", signal_, signal.get());
+	qDebug("%s =%p -%p", __func__, signal_, signal.get());
 	int index = signal_selector_->findData(QVariant::fromValue((void*)signal.get()));
 
 	if (index != -1)
@@ -370,7 +375,7 @@ void View::update_selectors(const data::DecodeSignal* signal)
 	//  - Decoder is added or removed from any signal
 	//  - New signal is added
 	//  - Selected signal changed
-	qDebug("update_selectors =%p +%p", signal_, signal);
+	qDebug("%s =%p +%p", __func__, signal_, signal);
 
 	int index = signal_selector_->findData(QVariant::fromValue((void*)signal));
 
@@ -392,15 +397,61 @@ void View::update_selectors(const data::DecodeSignal* signal)
 					for (const AnnotationClass* cls : row->ann_classes()) {
 						QString option = dec_name + ": " + row_name + ": " + cls->name;
 
-						auto *act = new QAction(option, class_selector_);
-						// TODO repopulate checkbox status from model cache instead of defaulting to checked
-						act->setCheckable(true);
-						class_selector_->addAction(act);
+						auto *item = new QListWidgetItem;
+						AnnotationClassId id {{dec->get_stack_level(), static_cast<uint32_t>(cls->id)}};
+						item->setData(Qt::UserRole, QVariant::fromValue(id.id));
+						item->setText(option);
+						// TODO repopulate selection status from model cache instead of defaulting to checked
+						item->setSelected(true);
+						class_selector_->addItem(item);
 					}
 				}
 			}
 		}
 	}
+}
+
+void View::update_class_visibility()
+{
+	auto visible_classes = std::unordered_set<decltype(AnnotationClassId::id)>();
+
+	if (hide_hidden_cb_->checkState()) {
+		// Follow the trace view class visibility
+
+		if (signal_) {
+			const auto& stack = signal_->decoder_stack();
+			if (!stack.empty()) {
+				for (const shared_ptr<Decoder>& dec: stack) {
+					if (!dec->visible())
+						continue;
+
+					for (const Row* row : dec->get_rows()) {
+						if (!row->visible())
+							continue;
+
+						for (const AnnotationClass* cls : row->ann_classes()) {
+							if (!cls->visible())
+								continue;
+
+							AnnotationClassId id {{dec->get_stack_level(), static_cast<uint32_t>(cls->id)}};
+							visible_classes.emplace(id.id);
+						}
+					}
+				}
+			}
+		}
+	} else {
+		// Follow the tabular view class visibility selector
+		for (const auto &item : class_selector_->selectedItems()) {
+			auto ann_id = item->data(Qt::UserRole).value<decltype(AnnotationClassId::id)>();
+			visible_classes.emplace(ann_id);
+		}
+	}
+
+	model_->set_visible_classes(visible_classes);
+
+	// Force repaint, otherwise the new selection isn't shown for some reason
+	table_view_->viewport()->update();
 }
 
 void View::save_data_as_csv(unsigned int save_type) const
@@ -492,9 +543,10 @@ void View::save_data_as_csv(unsigned int save_type) const
 	msg.exec();
 }
 
-void View::on_selected_classes_changed(int index)
+
+void View::on_selected_classes_changed()
 {
-	(void)index;
+	update_class_visibility();
 }
 
 void View::on_selected_signal_changed(int index)
@@ -503,17 +555,19 @@ void View::on_selected_signal_changed(int index)
 		disconnect(signal_, SIGNAL(color_changed(QColor)));
 		disconnect(signal_, SIGNAL(new_annotations()));
 		disconnect(signal_, SIGNAL(decode_reset()));
+		disconnect(signal_, SIGNAL(annotation_visibility_changed()));
 	}
 
 	reset_data();
 
 	DecodeSignal* signal = (DecodeSignal*)signal_selector_->itemData(index).value<void*>();
-	qDebug("on_selected_signal_changed %p -> %p", signal_, signal);
+	qDebug("%s %p -> %p", __func__, signal_, signal);
 	signal_ = signal;
 
 	connect(signal_, SIGNAL(color_changed(QColor)), this, SLOT(on_signal_color_changed(QColor)));
 	connect(signal_, SIGNAL(new_annotations()), this, SLOT(on_new_annotations()));
 	connect(signal_, SIGNAL(decode_reset()), this, SLOT(on_decoder_reset()));
+	connect(signal_, SIGNAL(annotation_visibility_changed()), this, SLOT(on_annotation_visibility_changed()));
 
 	update_data();
 	update_selectors(signal_);
@@ -524,11 +578,9 @@ void View::on_selected_signal_changed(int index)
 
 void View::on_hide_hidden_changed(bool checked)
 {
-	class_selector_button_->setDisabled(checked);
-	model_->set_hide_hidden(checked);
+	class_selector_button_.setDisabled(checked);
 
-	// Force repaint, otherwise the new selection isn't shown for some reason
-	table_view_->viewport()->update();
+	update_class_visibility();
 }
 
 void View::on_view_mode_changed(int index)
@@ -556,6 +608,11 @@ void View::on_view_mode_changed(int index)
 			filter_proxy_model_->mapFromSource(model_->index(model_->rowCount() - 1, 0)),
 			QAbstractItemView::PositionAtBottom);
 	}
+}
+
+void View::on_annotation_visibility_changed()
+{
+	update_class_visibility();
 }
 
 void View::on_signal_name_changed(const QString &name)
@@ -614,7 +671,7 @@ void View::on_decoder_stack_changed(void* decoder)
 	DecodeSignal* signal = dynamic_cast<DecodeSignal*>(sb);
 	assert(signal);
 
-	qDebug("on_decoder_stack_changed =%p +%p", signal_, signal);
+	qDebug("%s =%p +%p", __func__, signal_, signal);
 	update_selectors(signal);
 }
 

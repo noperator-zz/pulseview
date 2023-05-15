@@ -27,15 +27,20 @@
 #include <QSortFilterProxyModel>
 #include <QTableView>
 #include <QToolButton>
-#include <QMenu>
-#include <QPushButton>
+#include <QListWidget>
 
 #include "pv/metadata_obj.hpp"
 #include "pv/views/viewbase.hpp"
 #include "pv/data/decodesignal.hpp"
 
+#include "pv/widgets/popuptoolbutton.hpp"
+#include "pv/popups/tabularclasses.hpp"
+
 namespace pv {
 class Session;
+
+using widgets::PopupToolButton;
+using popups::TabularClasses;
 
 namespace views {
 
@@ -54,6 +59,15 @@ enum ViewModeType {
 	ViewModeLatest,
 	ViewModeVisible,
 	ViewModeCount // Indicates how many view mode types there are, must always be last
+};
+
+// Unique identifier for an annotation class of a particular decoder
+union AnnotationClassId {
+	struct {
+		uint32_t dec_stack_level;
+		uint32_t ann_id;
+	};
+	uint64_t id;
 };
 
 extern const char* SaveTypeNames[SaveTypeCount];
@@ -84,27 +98,23 @@ public:
 	int columnCount(const QModelIndex& parent_idx = QModelIndex()) const override;
 
 	void set_signal_and_segment(data::DecodeSignal* signal, uint32_t current_segment);
-	void set_hide_hidden(bool hide_hidden);
+	void set_visible_classes(const std::unordered_set<decltype(AnnotationClassId::id)> &ann_class_ids);
 
-	void update_annotations_without_hidden();
+	void update_visible_annotations();
 	QModelIndex update_highlighted_rows(QModelIndex first, QModelIndex last,
 		int64_t sample_num);
-
-private Q_SLOTS:
-	void on_annotation_visibility_changed();
 
 private:
 	vector<QVariant> header_data_;
 	const deque<const Annotation*>* all_annotations_;
-	deque<const Annotation*> all_annotations_without_hidden_;
-	const deque<const Annotation*>* dataset_;
+	deque<const Annotation*> visible_annotations_;
 	data::DecodeSignal* signal_;
 	uint8_t first_hidden_column_;
 	uint32_t prev_segment_;
 	uint64_t prev_last_row_;
 	int64_t highlight_sample_num_;
 	bool had_highlight_before_;
-	bool hide_hidden_;
+	std::unordered_set<decltype(AnnotationClassId::id)> visible_ann_class_ids_;
 };
 
 
@@ -171,15 +181,17 @@ private:
 	void reset_data();
 	void update_data();
 	void update_selectors(const data::DecodeSignal* signal);
+	void update_class_visibility();
 
 	void save_data_as_csv(unsigned int save_type) const;
 
 private Q_SLOTS:
 	void on_selected_signal_changed(int index);
-	void on_selected_classes_changed(int index);
+	void on_selected_classes_changed();
 	void on_hide_hidden_changed(bool checked);
 	void on_view_mode_changed(int index);
 
+	void on_annotation_visibility_changed();
 	void on_signal_name_changed(const QString &name);
 	void on_signal_color_changed(const QColor &color);
 	void on_new_annotations();
@@ -203,8 +215,8 @@ private:
 	QWidget* parent_;
 
 	QComboBox* signal_selector_;
-	QMenu* class_selector_;
-	QPushButton* class_selector_button_;
+	QListWidget* class_selector_;
+	PopupToolButton class_selector_button_;
 	QCheckBox* hide_hidden_cb_;
 	QComboBox* view_mode_selector_;
 

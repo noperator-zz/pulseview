@@ -362,6 +362,7 @@ set(pulseview_SOURCES
 	pv/dialogs/storeprogress.cpp
 	pv/popups/deviceoptions.cpp
 	pv/popups/channels.cpp
+	pv/popups/tabularclasses.cpp
 	pv/prop/bool.cpp
 	pv/prop/double.cpp
 	pv/prop/enum.cpp
