@@ -143,7 +143,6 @@ class CustomTableView : public QTableView
 	Q_OBJECT
 
 public:
-	virtual QSize minimumSizeHint() const override;
 	virtual QSize sizeHint() const override;
 
 protected:

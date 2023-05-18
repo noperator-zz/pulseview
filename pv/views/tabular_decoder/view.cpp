@@ -123,7 +123,7 @@ void CustomFilterProxyModel::enable_range_filtering(bool value)
 }
 
 
-QSize CustomTableView::minimumSizeHint() const
+QSize CustomTableView::sizeHint() const
 {
 	QSize size(QTableView::sizeHint());
 
@@ -135,11 +135,6 @@ QSize CustomTableView::minimumSizeHint() const
 	size.setWidth(width + (horizontalHeader()->count() * 1));
 
 	return size;
-}
-
-QSize CustomTableView::sizeHint() const
-{
-	return minimumSizeHint();
 }
 
 void CustomTableView::keyPressEvent(QKeyEvent *event)
