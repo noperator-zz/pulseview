@@ -154,6 +154,7 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 
 	// Note: Place defaults in View::reset_view_state(), not here
 	parent_(parent),
+	toolbar_(new QToolBar()),
 	signal_selector_(new QComboBox()),
 	class_selector_(new QListWidget()),
 	class_selector_button_(new PopupToolButton(this)),
@@ -171,25 +172,28 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	root_layout->addWidget(table_view_);
 
 	// Create toolbar
-	QToolBar* toolbar = new QToolBar();
-	toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
-	parent->addToolBar(toolbar);
+	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
+	parent->addToolBar(toolbar_);
 
-	// Populate toolbar
-	toolbar->addWidget(new QLabel(tr("Decoder:")));
-	toolbar->addWidget(signal_selector_);
-	toolbar->addSeparator();
-	toolbar->addWidget(save_button_);
-	toolbar->addSeparator();
-	toolbar->addWidget(view_mode_selector_);
-	toolbar->addSeparator();
-	toolbar->addWidget(hide_hidden_cb_);
-	toolbar->addWidget(&class_selector_button_);
+	// Populate toolbar_
+	toolbar_->addWidget(new QLabel(tr("Decoder:")));
+	toolbar_->addWidget(signal_selector_);
+	toolbar_->addSeparator();
+	toolbar_->addWidget(save_button_);
+	toolbar_->addSeparator();
+	toolbar_->addWidget(view_mode_selector_);
+	toolbar_->addSeparator();
+	toolbar_->addWidget(hide_hidden_cb_);
+	// TODO the popup 'arrow' sometimes doesn't line up with the button
+	//  Also, if the button is clicked while the toolbar is overflowed, the overflow menu will close while the popup
+	//  is active. The popup still functions, but this is different behavior than the Channel selection popup in
+	//  the MainBar.
+	toolbar_->addWidget(&class_selector_button_);
 
 	connect(signal_selector_, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(on_selected_signal_changed(int)));
-	connect(class_selector_, SIGNAL(itemSelectionChanged()),
-			this, SLOT(on_selected_classes_changed()));
+//	connect(class_selector_, SIGNAL(itemSelectionChanged()),
+//			this, SLOT(on_selected_classes_changed()));
 	connect(view_mode_selector_, SIGNAL(currentIndexChanged(int)),
 		this, SLOT(on_view_mode_changed(int)));
 	connect(hide_hidden_cb_, SIGNAL(toggled(bool)),
@@ -202,7 +206,8 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 
 	auto *const class_selector_popup = new popups::TabularClasses(session, this, class_selector_);
 	class_selector_button_.set_popup(class_selector_popup);
-	class_selector_button_.setToolTip(tr("Configure Channels"));
+	class_selector_button_.setToolTip(tr("Configure Annotation Classes"));
+	// TODO need a new icon
 	class_selector_button_.setIcon(QIcon(":/icons/settings-general.png"));
 	class_selector_button_.setDisabled(hide_hidden_cb_->checkState());
 
@@ -286,6 +291,15 @@ ViewType View::get_type() const
 	return ViewTypeTabularDecoder;
 }
 
+QSize View::sizeHint() const
+{
+	// TODO this hint is not really respected. Other views will eat into it
+	QSize size = toolbar_->sizeHint();
+	QSize size2 = table_view_->sizeHint();
+	size.setWidth(std::max(size.width(), size2.width()));
+	return size;
+}
+
 void View::reset_view_state()
 {
 	ViewBase::reset_view_state();
@@ -296,6 +310,7 @@ void View::reset_view_state()
 
 void View::clear_decode_signals()
 {
+	qDebug(__func__);
 	ViewBase::clear_decode_signals();
 
 	reset_data();
@@ -359,11 +374,13 @@ void View::restore_settings(QSettings &settings)
 
 void View::reset_data()
 {
+	qDebug(__func__);
 	signal_ = nullptr;
 }
 
 void View::update_data()
 {
+	qDebug(__func__);
 	model_->set_signal_and_segment(signal_, current_segment_);
 }
 
@@ -373,7 +390,8 @@ void View::update_selectors(const data::DecodeSignal* signal)
 	//  - Decoder is added or removed from any signal
 	//  - New signal is added
 	//  - Selected signal changed
-	qDebug("%s =%p +%p", __func__, signal_, signal);
+	QSize size = toolbar_->sizeHint();
+	qDebug("%s =%p +%p, %i", __func__, signal_, signal, size.width());
 
 	int index = signal_selector_->findData(QVariant::fromValue((void*)signal));
 
@@ -384,6 +402,9 @@ void View::update_selectors(const data::DecodeSignal* signal)
 
 	if (signal == signal_) {
 		// Repopulate class selector
+
+		// Disable selection signal during this time, as it would be called each time an item is added
+		disconnect(class_selector_, SIGNAL(itemSelectionChanged()), nullptr, nullptr);
 		class_selector_->clear();
 
 		const auto& stack = signal->decoder_stack();
@@ -407,11 +428,16 @@ void View::update_selectors(const data::DecodeSignal* signal)
 				}
 			}
 		}
+
+		connect(class_selector_, SIGNAL(itemSelectionChanged()),
+				this, SLOT(on_selected_classes_changed()));
+		update_class_visibility();
 	}
 }
 
 void View::update_class_visibility()
 {
+	qDebug(__func__);
 	auto visible_classes = std::unordered_set<decltype(AnnotationClassId::id)>();
 
 	if (hide_hidden_cb_->checkState()) {
@@ -446,6 +472,8 @@ void View::update_class_visibility()
 			visible_classes.emplace(ann_id);
 		}
 	}
+
+	qDebug("%u classes visible", visible_classes.size());
 
 	model_->set_visible_classes(visible_classes);
 
@@ -545,16 +573,17 @@ void View::save_data_as_csv(unsigned int save_type) const
 
 void View::on_selected_classes_changed()
 {
+	qDebug(__func__);
 	update_class_visibility();
 }
 
 void View::on_selected_signal_changed(int index)
 {
 	if (signal_) {
-		disconnect(signal_, SIGNAL(color_changed(QColor)));
-		disconnect(signal_, SIGNAL(new_annotations()));
-		disconnect(signal_, SIGNAL(decode_reset()));
-		disconnect(signal_, SIGNAL(annotation_visibility_changed()));
+		disconnect(signal_, SIGNAL(color_changed(QColor)), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(new_annotations()), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(decode_reset()), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(annotation_visibility_changed()), nullptr, nullptr);
 	}
 
 	reset_data();
@@ -578,7 +607,6 @@ void View::on_selected_signal_changed(int index)
 void View::on_hide_hidden_changed(bool checked)
 {
 	class_selector_button_.setDisabled(checked);
-
 	update_class_visibility();
 }
 
@@ -611,6 +639,7 @@ void View::on_view_mode_changed(int index)
 
 void View::on_annotation_visibility_changed()
 {
+	qDebug(__func__);
 	update_class_visibility();
 }
 
@@ -653,9 +682,18 @@ void View::on_new_annotations()
 
 void View::on_decoder_reset()
 {
+	qDebug(__func__);
 	// Invalidate the model's data connection immediately - otherwise we
 	// will use a stale pointer in model_->index() when called from the table view
 	model_->set_signal_and_segment(signal_, current_segment_);
+
+	// Find the signal that contains the selected decoder
+	SignalBase* sb = qobject_cast<SignalBase*>(QObject::sender());
+	assert(sb);
+
+	DecodeSignal* signal = dynamic_cast<DecodeSignal*>(sb);
+	assert(signal);
+	update_selectors(signal);
 }
 
 void View::on_decoder_stack_changed(void* decoder)
@@ -671,7 +709,8 @@ void View::on_decoder_stack_changed(void* decoder)
 	assert(signal);
 
 	qDebug("%s =%p +%p", __func__, signal_, signal);
-	update_selectors(signal);
+	// NOTE: Every time the decoder stack changes, decoder_reset() will be called as well.
+	//  Only call update_selectors() there.
 }
 
 void View::on_actionSave_triggered(QAction* action)

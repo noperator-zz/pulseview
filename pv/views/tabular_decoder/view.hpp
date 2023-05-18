@@ -176,6 +176,7 @@ public:
 	virtual void save_settings(QSettings &settings) const;
 	virtual void restore_settings(QSettings &settings);
 
+	virtual QSize sizeHint() const override;
 private:
 	void reset_data();
 	void update_data();
@@ -213,6 +214,7 @@ private Q_SLOTS:
 private:
 	QWidget* parent_;
 
+	QToolBar* toolbar_;
 	QComboBox* signal_selector_;
 	QListWidget* class_selector_;
 	PopupToolButton class_selector_button_;
