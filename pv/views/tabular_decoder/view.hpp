@@ -98,22 +98,25 @@ public:
 
 	void set_signal_and_segment(data::DecodeSignal* signal, uint32_t current_segment);
 	void set_visible_classes(const std::unordered_set<decltype(AnnotationClassId::id)> &ann_class_ids);
+	void update_data();
 
-	void update_visible_annotations();
 	QModelIndex update_highlighted_rows(QModelIndex first, QModelIndex last,
 		int64_t sample_num);
 
+	const deque<const Annotation*>* all_annotations_;
 private:
 	vector<QVariant> header_data_;
-	const deque<const Annotation*>* all_annotations_;
 	deque<const Annotation*> visible_annotations_;
 	data::DecodeSignal* signal_;
 	uint8_t first_hidden_column_;
 	uint32_t prev_segment_;
 	uint64_t prev_last_row_;
+	uint64_t prev_last_row_index_;
 	int64_t highlight_sample_num_;
 	bool had_highlight_before_;
 	std::unordered_set<decltype(AnnotationClassId::id)> visible_ann_class_ids_;
+
+	void update_visible_annotations();
 };
 
 

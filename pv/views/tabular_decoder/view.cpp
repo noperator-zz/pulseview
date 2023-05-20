@@ -66,6 +66,7 @@ const char* ViewModeNames[ViewModeCount] = {
 	"Show visible in main view"
 };
 
+#define tDebug(...) qDebug("%s %s", std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()).c_str(), __VA_ARGS__)
 
 CustomFilterProxyModel::CustomFilterProxyModel(QObject* parent) :
 	QSortFilterProxyModel(parent),
@@ -314,7 +315,10 @@ void View::clear_decode_signals()
 	ViewBase::clear_decode_signals();
 
 	reset_data();
+	update_data();
 	reset_view_state();
+	// Force repaint, otherwise the new selection isn't shown for some reason
+	table_view_->viewport()->update();
 }
 
 void View::add_decode_signal(shared_ptr<data::DecodeSignal> signal)
@@ -338,6 +342,7 @@ void View::add_decode_signal(shared_ptr<data::DecodeSignal> signal)
 
 void View::remove_decode_signal(shared_ptr<data::DecodeSignal> signal)
 {
+	// FIXME this does not get called when switching caoture devices
 	qDebug("%s =%p -%p", __func__, signal_, signal.get());
 	int index = signal_selector_->findData(QVariant::fromValue((void*)signal.get()));
 
@@ -380,7 +385,7 @@ void View::reset_data()
 
 void View::update_data()
 {
-	qDebug(__func__);
+	tDebug(__func__);
 	model_->set_signal_and_segment(signal_, current_segment_);
 }
 
@@ -592,14 +597,15 @@ void View::on_selected_signal_changed(int index)
 	qDebug("%s %p -> %p", __func__, signal_, signal);
 	signal_ = signal;
 
-	connect(signal_, SIGNAL(color_changed(QColor)), this, SLOT(on_signal_color_changed(QColor)));
-	connect(signal_, SIGNAL(new_annotations()), this, SLOT(on_new_annotations()));
-	connect(signal_, SIGNAL(decode_reset()), this, SLOT(on_decoder_reset()));
-	connect(signal_, SIGNAL(annotation_visibility_changed()), this, SLOT(on_annotation_visibility_changed()));
+	if (signal_) {
+		connect(signal_, SIGNAL(color_changed(QColor)), this, SLOT(on_signal_color_changed(QColor)));
+		connect(signal_, SIGNAL(new_annotations()), this, SLOT(on_new_annotations()));
+		connect(signal_, SIGNAL(decode_reset()), this, SLOT(on_decoder_reset()));
+		connect(signal_, SIGNAL(annotation_visibility_changed()), this, SLOT(on_annotation_visibility_changed()));
 
+		update_selectors(signal_);
+	}
 	update_data();
-	update_selectors(signal_);
-
 	// Force repaint, otherwise the new selection isn't shown for some reason
 	table_view_->viewport()->update();
 }
@@ -669,8 +675,13 @@ void View::on_signal_color_changed(const QColor &color)
 
 void View::on_new_annotations()
 {
+	qDebug(__func__);
 	if (view_mode_selector_->currentIndex() == ViewModeLatest) {
-		update_data();
+		if (!model_->all_annotations_) {
+			update_data();
+		} else {
+			model_->update_data();
+		}
 		table_view_->scrollTo(
 			filter_proxy_model_->index(filter_proxy_model_->rowCount() - 1, 0),
 			QAbstractItemView::PositionAtBottom);
@@ -817,7 +828,13 @@ void View::on_metadata_object_changed(MetadataObject* obj,
 
 void View::perform_delayed_view_update()
 {
-	update_data();
+	// TODO stop this task when the signal becomes invalid
+	qDebug(__func__);
+	if (!model_->all_annotations_) {
+		update_data();
+	} else {
+		model_->update_data();
+	}
 }
 
 

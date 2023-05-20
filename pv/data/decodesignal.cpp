@@ -1590,6 +1590,7 @@ void DecodeSignal::disconnect_input_notifiers()
 
 void DecodeSignal::create_decode_segment()
 {
+	qDebug(__func__);
 	// Create annotation segment
 	segments_.emplace_back();
 

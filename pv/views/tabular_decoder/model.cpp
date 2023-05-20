@@ -46,6 +46,7 @@ AnnotationCollectionModel::AnnotationCollectionModel(QObject* parent) :
 	first_hidden_column_(0),
 	prev_segment_(0),
 	prev_last_row_(0),
+	prev_last_row_index_(0),
 	had_highlight_before_(false),
 	visible_ann_class_ids_()
 {
@@ -196,7 +197,7 @@ int AnnotationCollectionModel::columnCount(const QModelIndex& parent_idx) const
 
 void AnnotationCollectionModel::set_signal_and_segment(data::DecodeSignal* signal, uint32_t current_segment)
 {
-	qDebug(__func__);
+	qDebug("%s %p %u", __func__, signal, current_segment);
 	layoutAboutToBeChanged();
 
 	if (!signal) {
@@ -212,28 +213,27 @@ void AnnotationCollectionModel::set_signal_and_segment(data::DecodeSignal* signa
 	all_annotations_ = signal->get_all_annotations_by_segment(current_segment);
 	signal_ = signal;
 
+	prev_last_row_ = 0;
+	prev_last_row_index_ = 0;
+	visible_annotations_.clear();
+	update_data();
+
+	prev_segment_ = current_segment;
+}
+
+void AnnotationCollectionModel::update_data() {
 	update_visible_annotations();
 
 	if (visible_annotations_.empty()) {
-		prev_segment_ = current_segment;
 		return;
 	}
 
 	const size_t new_row_count = visible_annotations_.size() - 1;
 
-	// Force the view associated with this model to update when the segment changes
-	if (prev_segment_ != current_segment) {
-		dataChanged(index(0, 0), index(new_row_count, 0));
-		layoutChanged();
-	} else {
-		// Force the view associated with this model to update when we have more annotations
-//		if (prev_last_row_ < new_row_count) {
-			dataChanged(index(prev_last_row_, 0), index(new_row_count, 0));
-			layoutChanged();
-//		}
-	}
+	// Force the view associated with this model to update when we have more annotations
+	dataChanged(index(0, 0), index(new_row_count, 0));
+	layoutChanged();
 
-	prev_segment_ = current_segment;
 	prev_last_row_ = new_row_count;
 }
 
@@ -249,16 +249,16 @@ void AnnotationCollectionModel::set_visible_classes(const std::unordered_set<dec
 
 	visible_ann_class_ids_ = ann_class_ids;
 
-	update_visible_annotations();
-
-	dataChanged(index(0, 0), index(visible_annotations_.size() - 1, 0));
-
-	layoutChanged();
+	prev_last_row_ = 0;
+	prev_last_row_index_ = 0;
+	visible_annotations_.clear();
+	update_data();
 }
 
 void AnnotationCollectionModel::update_visible_annotations()
 {
-	uint64_t count = 0;
+	uint64_t count = visible_annotations_.size();
+	uint64_t processed = 0;
 
 	if (!all_annotations_ || all_annotations_->empty()) {
 		visible_annotations_.clear();
@@ -266,7 +266,8 @@ void AnnotationCollectionModel::update_visible_annotations()
 	}
 
 	qDebug("Start annotation update");
-	for (const Annotation* ann : *all_annotations_) {
+	for (uint64_t i = prev_last_row_index_; i < all_annotations_->size(); i++) {
+		const auto* ann = (*all_annotations_)[i];
 		AnnotationClassId id {{ann->row()->decoder()->get_stack_level(), ann->ann_class_id()}};
 		if (!visible_ann_class_ids_.count(id.id))
 			continue;
@@ -275,8 +276,10 @@ void AnnotationCollectionModel::update_visible_annotations()
 			visible_annotations_.resize(count + 100);
 
 		visible_annotations_[count++] = ann;
+		prev_last_row_index_ = i;
+		processed++;
 	}
-	qDebug("Finish annotation update: %lu", count);
+	qDebug("Finish annotation update: %lu %lu", processed, count);
 
 	visible_annotations_.resize(count);
 }
