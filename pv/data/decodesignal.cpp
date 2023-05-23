@@ -750,6 +750,10 @@ const deque<const Annotation*>* DecodeSignal::get_all_annotations_by_segment(
 	return &(segment->all_annotations);
 }
 
+mutex& DecodeSignal::get_output_mutex() const {
+	return output_mutex_;
+}
+
 void DecodeSignal::save_settings(QSettings &settings) const
 {
 	SignalBase::save_settings(settings);
@@ -1685,6 +1689,8 @@ void DecodeSignal::annotation_callback(srd_proto_data *pdata, void *decode_signa
 			if (it != all_annotations.begin())
 				it++;
 
+			// NOTE: Other threads using all_annotations must be aware that items may be inserted at random positions!
+			//  Lock output_mutex_ when this is a concern
 			all_annotations.emplace(it, ann);
 		} else
 			all_annotations.emplace_back(ann);

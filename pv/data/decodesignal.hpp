@@ -194,6 +194,7 @@ public:
 		const Decoder* dec, uint32_t bin_class_id) const;
 
 	const deque<const Annotation*>* get_all_annotations_by_segment(uint32_t segment_id) const;
+	mutex& get_output_mutex() const;
 
 	virtual void save_settings(QSettings &settings) const;
 
