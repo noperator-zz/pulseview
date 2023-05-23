@@ -36,6 +36,9 @@
 #include "pv/widgets/popuptoolbutton.hpp"
 #include "pv/popups/tabularclasses.hpp"
 
+extern uint64_t time();
+#define tDebug(t, f, ...) qDebug("%s " f, std::to_string(time() - t).c_str(), __VA_ARGS__)
+
 namespace pv {
 class Session;
 

@@ -51,6 +51,8 @@ using std::make_shared;
 using std::max;
 using std::shared_ptr;
 
+uint64_t time() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();}
+
 namespace pv {
 namespace views {
 namespace tabular_decoder {
@@ -66,7 +68,6 @@ const char* ViewModeNames[ViewModeCount] = {
 	"Show visible in main view"
 };
 
-#define tDebug(...) qDebug("%s %s", std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()).c_str(), __VA_ARGS__)
 
 CustomFilterProxyModel::CustomFilterProxyModel(QObject* parent) :
 	QSortFilterProxyModel(parent),
