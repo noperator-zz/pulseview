@@ -312,6 +312,16 @@ void View::reset_view_state()
 void View::clear_decode_signals()
 {
 	qDebug(__func__);
+//	for (const auto& signal : decode_signals_) {
+//		remove_decode_signal(signal);
+//	}
+	if (signal_) {
+		disconnect(signal_, SIGNAL(color_changed(QColor)), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(new_annotations()), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(decode_reset()), nullptr, nullptr);
+		disconnect(signal_, SIGNAL(annotation_visibility_changed()), nullptr, nullptr);
+	}
+
 	ViewBase::clear_decode_signals();
 
 	reset_data();
@@ -342,7 +352,6 @@ void View::add_decode_signal(shared_ptr<data::DecodeSignal> signal)
 
 void View::remove_decode_signal(shared_ptr<data::DecodeSignal> signal)
 {
-	// FIXME this does not get called when switching caoture devices
 	qDebug("%s =%p -%p", __func__, signal_, signal.get());
 	int index = signal_selector_->findData(QVariant::fromValue((void*)signal.get()));
 
