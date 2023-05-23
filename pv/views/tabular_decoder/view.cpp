@@ -249,8 +249,8 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 
 	table_view_->setSelectionBehavior(QAbstractItemView::SelectRows);
 	table_view_->setSelectionMode(QAbstractItemView::ContiguousSelection);
-	table_view_->setSortingEnabled(true);
-	table_view_->sortByColumn(0, Qt::AscendingOrder);
+//	table_view_->setSortingEnabled(true);
+//	table_view_->sortByColumn(0, Qt::AscendingOrder);
 
 	for (uint8_t i = model_->first_hidden_column(); i < model_->columnCount(); i++)
 		table_view_->setColumnHidden(i, true);
