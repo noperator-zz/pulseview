@@ -304,12 +304,12 @@ void AnnotationCollectionModel::update_visible_annotations()
 			visible_annotations_.resize(count + 100);
 
 		visible_annotations_[count++] = ann;
-		prev_last_row_index_ = i;
 		processed++;
 	}
 	qDebug("Finish annotation update: %lu %lu", processed, count);
 
 	visible_annotations_.resize(count);
+	prev_last_row_index_ = all_annotations_->size();
 }
 
 QModelIndex AnnotationCollectionModel::update_highlighted_rows(QModelIndex first,
