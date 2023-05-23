@@ -2,7 +2,7 @@
 decode_signals=1
 generated_signals=0
 meta_objs=0
-views=1
+views=2
 
 [2]
 color=4291559424
@@ -167,7 +167,10 @@ decoder0\ann_class7\visible=true
 decoder0\ann_class8\visible=true
 decoder0\ann_class9\visible=true
 decoder0\id=uart
-decoder0\options=0
+decoder0\option0\name=baudrate
+decoder0\option0\type=x
+decoder0\option0\value=@ByteArray(\x80\x96\x98\0\0\0\0\0)
+decoder0\options=1
 decoder0\row0\visible=true
 decoder0\row1\visible=true
 decoder0\row2\visible=true
@@ -228,9 +231,14 @@ D4\trace_height=34
 D5\trace_height=34
 D6\trace_height=34
 D7\trace_height=34
-offset=22 serialization::archive 18 0 0 0 0 60500 71346988 50848609 17925834 87251203 32273428 -8 1 0 6
-scale=1.0190217391304338e-05
+offset=22 serialization::archive 18 0 0 0 0 1411634 29559308 7366752 83701900 33923473 90230555 -8 1 0 6
+scale=4.142798690671025e-05
 segment_display_mode=1
 splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0\x46\0\0\x5\xd0\x1\0\0\0\x1\x1\0\0\0\x1\0)
-v_offset=-274
+v_offset=-152
 zero_offset=22 serialization::archive 18 0 0 0 0 0 0 0 0 0 0 0 0 0 6
+
+[view1]
+hide_hidden=true
+type=2
+view_mode=0

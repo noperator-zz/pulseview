@@ -211,6 +211,8 @@ void AnnotationCollectionModel::set_signal_and_segment(data::DecodeSignal* signa
 	}
 
 	all_annotations_ = signal->get_all_annotations_by_segment(current_segment);
+	if (all_annotations_)
+		qDebug("size %zu", all_annotations_->size());
 	signal_ = signal;
 
 	prev_last_row_ = 0;
