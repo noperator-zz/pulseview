@@ -116,6 +116,7 @@ private:
 	int64_t highlight_sample_num_;
 	bool had_highlight_before_;
 	std::unordered_set<decltype(AnnotationClassId::id)> visible_ann_class_ids_;
+	mutex* output_mutex_;
 
 	void update_visible_annotations();
 };

@@ -48,7 +48,8 @@ AnnotationCollectionModel::AnnotationCollectionModel(QObject* parent) :
 	prev_last_row_(0),
 	prev_last_row_index_(0),
 	had_highlight_before_(false),
-	visible_ann_class_ids_()
+	visible_ann_class_ids_(),
+	output_mutex_(nullptr)
 {
 	// Note: when adding entries, consider ViewVisibleFilterProxyModel::filterAcceptsRow()
 
@@ -227,6 +228,7 @@ void AnnotationCollectionModel::set_signal_and_segment(data::DecodeSignal* signa
 	}
 
 	all_annotations_ = signal->get_all_annotations_by_segment(current_segment);
+	output_mutex_ = &signal->get_output_mutex();
 	if (all_annotations_)
 		qDebug("size %zu", all_annotations_->size());
 	signal_ = signal;
@@ -278,7 +280,15 @@ void AnnotationCollectionModel::update_visible_annotations()
 	uint64_t count = visible_annotations_.size();
 	uint64_t processed = 0;
 
-	if (!all_annotations_ || all_annotations_->empty()) {
+	if (!output_mutex_ || !all_annotations_) {
+		visible_annotations_.clear();
+		return;
+	}
+
+	// Take the lock to avoid all_annotations being mutated (specifically, insertions not at the end) while we're iterating it
+	std::lock_guard<mutex> lock(*output_mutex_);
+
+	if (all_annotations_->empty()) {
 		visible_annotations_.clear();
 		return;
 	}
