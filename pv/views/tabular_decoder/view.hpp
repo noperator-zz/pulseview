@@ -81,6 +81,7 @@ class AnnotationCollectionModel : public QAbstractTableModel
 public:
 	AnnotationCollectionModel(QObject* parent = nullptr);
 
+	int get_hierarchy_level(const Annotation* ann) const;
 	QVariant data_from_ann(const Annotation* ann, int index) const;
 	QVariant data(const QModelIndex& index, int role) const override;
 	Qt::ItemFlags flags(const QModelIndex& index) const override;
