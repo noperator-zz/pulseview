@@ -4,6 +4,48 @@ generated_signals=0
 meta_objs=0
 views=1
 
+[2]
+color=4291559424
+conv_options=0
+conversion_type=0
+enabled=false
+name=2
+
+[3]
+color=4294277376
+conv_options=0
+conversion_type=0
+enabled=false
+name=3
+
+[4]
+color=4293776384
+conv_options=0
+conversion_type=0
+enabled=false
+name=4
+
+[5]
+color=4285780502
+conv_options=0
+conversion_type=0
+enabled=false
+name=5
+
+[6]
+color=4281623972
+conv_options=0
+conversion_type=0
+enabled=false
+name=6
+
+[7]
+color=4285878395
+conv_options=0
+conversion_type=0
+enabled=false
+name=7
+
 [A0]
 color=4291076096
 conv_options=0
@@ -142,6 +184,12 @@ enabled=true
 name=UART
 
 [view0]
+2\trace_height=34
+3\trace_height=34
+4\trace_height=34
+5\trace_height=34
+6\trace_height=34
+7\trace_height=34
 A0\autoranging=true
 A0\display_type=0
 A0\div_height=51
@@ -180,9 +228,9 @@ D4\trace_height=34
 D5\trace_height=34
 D6\trace_height=34
 D7\trace_height=34
-offset=22 serialization::archive 18 0 0 0 0 1616037 39825249 24852473 96866625 14163691 37601882 -8 1 0 6
-scale=3.4391983695652146e-05
+offset=22 serialization::archive 18 0 0 0 0 60500 71346988 50848609 17925834 87251203 32273428 -8 1 0 6
+scale=1.0190217391304338e-05
 segment_display_mode=1
 splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0\x46\0\0\x5\xd0\x1\0\0\0\x1\x1\0\0\0\x1\0)
-v_offset=-312
+v_offset=-274
 zero_offset=22 serialization::archive 18 0 0 0 0 0 0 0 0 0 0 0 0 0 6
