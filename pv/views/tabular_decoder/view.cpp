@@ -80,6 +80,7 @@ bool CustomFilterProxyModel::filterAcceptsRow(int sourceRow,
 {
 	(void)sourceParent;
 	assert(sourceModel() != nullptr);
+//	qDebug("%s %i", __func__, sourceRow);
 
 	bool result = true;
 
@@ -395,7 +396,7 @@ void View::reset_data()
 
 void View::update_data()
 {
-	tDebug(__func__);
+	tDebug(0, "%s", __func__);
 	model_->set_signal_and_segment(signal_, current_segment_);
 }
 
@@ -803,6 +804,7 @@ void View::on_metadata_object_changed(MetadataObject* obj,
 	// Check if we need to update the model's data range. We only work on the
 	// end sample value because the start sample value is updated first and
 	// we don't want to update the model twice
+//	qDebug(__func__);
 	if ((view_mode_selector_->currentIndex() == ViewModeVisible) &&
 		(obj->type() == MetadataObjMainViewRange) &&
 		(value_type == MetadataValueEndSample)) {
