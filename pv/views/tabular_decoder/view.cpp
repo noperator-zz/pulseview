@@ -159,10 +159,11 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	parent_(parent),
 	toolbar_(new QToolBar()),
 	signal_selector_(new QComboBox()),
-	class_selector_(new QListWidget()),
+	class_selector_(new ClassListWidget()),
 	class_selector_button_(new PopupToolButton(this)),
 	hide_hidden_cb_(new QCheckBox()),
 	view_mode_selector_(new QComboBox()),
+	sort_cb_(new QCheckBox()),
 	save_button_(new QToolButton()),
 	save_action_(new QAction(this)),
 	table_view_(new CustomTableView()),
@@ -175,6 +176,7 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	root_layout->addWidget(table_view_);
 
 	// Create toolbar
+	qDebug("toolbar start");
 	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
 	parent->addToolBar(toolbar_);
 
@@ -191,7 +193,10 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	//  Also, if the button is clicked while the toolbar is overflowed, the overflow menu will close while the popup
 	//  is active. The popup still functions, but this is different behavior than the Channel selection popup in
 	//  the MainBar.
-	toolbar_->addWidget(&class_selector_button_);
+	toolbar_->addWidget(class_selector_button_);
+	toolbar_->addSeparator();
+	toolbar_->addWidget(sort_cb_);
+	qDebug("toolbar end");
 
 	connect(signal_selector_, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(on_selected_signal_changed(int)));
@@ -201,6 +206,10 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 		this, SLOT(on_view_mode_changed(int)));
 	connect(hide_hidden_cb_, SIGNAL(toggled(bool)),
 		this, SLOT(on_hide_hidden_changed(bool)));
+	connect(sort_cb_, SIGNAL(toggled(bool)),
+		this, SLOT(on_sort_changed(bool)));
+	connect(class_selector_button_, SIGNAL(closed()),
+		this, SLOT(on_class_selector_triggered()));
 
 	// Configure widgets
 	signal_selector_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -208,17 +217,20 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	class_selector_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
 	auto *const class_selector_popup = new popups::TabularClasses(session, this, class_selector_);
-	class_selector_button_.set_popup(class_selector_popup);
-	class_selector_button_.setToolTip(tr("Configure Annotation Classes"));
+	class_selector_button_->set_popup(class_selector_popup);
+	class_selector_button_->setToolTip(tr("Configure Annotation Classes"));
 	// TODO need a new icon
-	class_selector_button_.setIcon(QIcon(":/icons/settings-general.png"));
-	class_selector_button_.setDisabled(hide_hidden_cb_->checkState());
+	class_selector_button_->setIcon(QIcon(":/icons/settings-general.png"));
+	class_selector_button_->setDisabled(hide_hidden_cb_->checkState());
 
 	for (int i = 0; i < ViewModeCount; i++)
 		view_mode_selector_->addItem(ViewModeNames[i], QVariant::fromValue(i));
 
 	hide_hidden_cb_->setText(tr("Hide Hidden Rows/Classes"));
 	hide_hidden_cb_->setChecked(true);
+
+	sort_cb_->setText(tr("Sort"));
+	sort_cb_->setChecked(false);
 
 	// Configure actions
 	save_action_->setText(tr("&Save..."));
@@ -282,6 +294,7 @@ View::View(Session &session, bool is_main_view, QMainWindow *parent) :
 	session_.metadata_obj_manager()->add_observer(this);
 
 	reset_view_state();
+	qDebug("View ctor end");
 }
 
 View::~View()
@@ -298,8 +311,8 @@ QSize View::sizeHint() const
 {
 	// TODO this hint is not really respected. Other views will eat into it
 	QSize size = toolbar_->sizeHint();
-	QSize size2 = table_view_->sizeHint();
-	size.setWidth(std::max(size.width(), size2.width()));
+	qDebug("sizeHint %u", size.width());
+	size.setWidth(size.width() * 2);
 	return size;
 }
 
@@ -420,7 +433,7 @@ void View::update_selectors(const data::DecodeSignal* signal)
 		// Repopulate class selector
 
 		// Disable selection signal during this time, as it would be called each time an item is added
-		disconnect(class_selector_, SIGNAL(itemSelectionChanged()), nullptr, nullptr);
+//		disconnect(class_selector_, SIGNAL(itemSelectionChanged()), nullptr, nullptr);
 		class_selector_->clear();
 
 		const auto& stack = signal->decoder_stack();
@@ -445,8 +458,10 @@ void View::update_selectors(const data::DecodeSignal* signal)
 			}
 		}
 
-		connect(class_selector_, SIGNAL(itemSelectionChanged()),
-				this, SLOT(on_selected_classes_changed()));
+		class_selector_->updateGeometry();
+
+//		connect(class_selector_, SIGNAL(itemSelectionChanged()),
+//				this, SLOT(on_selected_classes_changed()));
 		update_class_visibility();
 	}
 }
@@ -586,12 +601,17 @@ void View::save_data_as_csv(unsigned int save_type) const
 	msg.exec();
 }
 
-
-void View::on_selected_classes_changed()
+void View::on_class_selector_triggered()
 {
 	qDebug(__func__);
 	update_class_visibility();
 }
+
+//void View::on_selected_classes_changed()
+//{
+//	qDebug(__func__);
+//	update_class_visibility();
+//}
 
 void View::on_selected_signal_changed(int index)
 {
@@ -623,8 +643,24 @@ void View::on_selected_signal_changed(int index)
 
 void View::on_hide_hidden_changed(bool checked)
 {
-	class_selector_button_.setDisabled(checked);
+	class_selector_button_->setDisabled(checked);
 	update_class_visibility();
+}
+
+void View::on_sort_changed(bool checked)
+{
+//	qDebug("sortRole: %i", filter_proxy_model_->sortRole());
+	if (!checked) {
+		// reset to sorting by index since new samples will just be added on the end
+		filter_proxy_model_->setSortRole(Qt::InitialSortOrderRole);
+		filter_proxy_model_->invalidate();
+	} else {
+		// Enable sorting
+		filter_proxy_model_->setSortRole(Qt::DisplayRole);
+		filter_proxy_model_->invalidate();
+		table_view_->sortByColumn(0, Qt::AscendingOrder);
+	}
+	table_view_->setSortingEnabled(checked);
 }
 
 void View::on_view_mode_changed(int index)

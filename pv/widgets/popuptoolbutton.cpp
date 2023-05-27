@@ -40,6 +40,13 @@ void PopupToolButton::set_popup(Popup *popup)
 {
 	assert(popup);
 	popup_ = popup;
+	connect(popup_, SIGNAL(closed()), this, SLOT(on_closed()));
+}
+
+void PopupToolButton::on_closed()
+{
+	qDebug("on_closed");
+	closed();
 }
 
 void PopupToolButton::on_clicked(bool)

@@ -38,8 +38,12 @@ public:
 
 	void set_popup(Popup *popup);
 
+Q_SIGNALS:
+	void closed();
+
 private Q_SLOTS:
 	void on_clicked(bool);
+	void on_closed();
 
 private:
 	Popup *popup_;

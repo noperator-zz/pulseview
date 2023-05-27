@@ -282,6 +282,7 @@ void Popup::reposition_widget()
 
 void Popup::closeEvent(QCloseEvent*)
 {
+	qDebug("closed");
 	closed();
 }
 

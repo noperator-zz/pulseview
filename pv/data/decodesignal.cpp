@@ -1674,25 +1674,28 @@ void DecodeSignal::annotation_callback(srd_proto_data *pdata, void *decode_signa
 		bool ann_is_longer = (new_ann_len >
 			(all_annotations.back()->end_sample() - all_annotations.back()->start_sample()));
 
-		if (ann_has_earlier_start && ann_is_longer) {
-			bool ann_has_same_start;
-			auto it = all_annotations.end();
-
-			do {
-				it--;
-				ann_has_earlier_start = (pdata->start_sample < (*it)->start_sample());
-				ann_has_same_start = (pdata->start_sample == (*it)->start_sample());
-				ann_is_longer = (new_ann_len > (*it)->length());
-			} while ((ann_has_earlier_start || (ann_has_same_start && ann_is_longer)) && (it != all_annotations.begin()));
-
-			// Allow inserting at the front
-			if (it != all_annotations.begin())
-				it++;
-
-			// NOTE: Other threads using all_annotations must be aware that items may be inserted at random positions!
-			//  Lock output_mutex_ when this is a concern
-			all_annotations.emplace(it, ann);
-		} else
+//		if (ann_has_earlier_start && ann_is_longer) {
+//			bool ann_has_same_start;
+//			auto it = all_annotations.end();
+//
+//			do {
+//				it--;
+//				ann_has_earlier_start = (pdata->start_sample < (*it)->start_sample());
+//				ann_has_same_start = (pdata->start_sample == (*it)->start_sample());
+//				ann_is_longer = (new_ann_len > (*it)->length());
+//			} while ((ann_has_earlier_start || (ann_has_same_start && ann_is_longer)) && (it != all_annotations.begin()));
+//
+//			// Allow inserting at the front
+//			if (it != all_annotations.begin())
+//				it++;
+//
+//			// NOTE: Other threads using all_annotations must be aware that items may be inserted at random positions!
+//			//  Lock output_mutex_ when this is a concern
+//			// NOTE: This behaviour is hard to deal with externally. If a view only updates itself based on new additions to
+//			//  all_annotations, it will miss annotations that were not inserted at the end, and will double update annotations that got pushed back
+//			//  due to this random insertion.
+//			all_annotations.emplace(it, ann);
+//		} else
 			all_annotations.emplace_back(ann);
 	}
 

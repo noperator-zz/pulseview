@@ -160,6 +160,15 @@ Q_SIGNALS:
 };
 
 
+class ClassListWidget : public QListWidget
+{
+public:
+	virtual QSize sizeHint() const override {
+		QSize size(sizeHintForColumn(0) + frameWidth() * 2, sizeHintForRow(0) * count() + 2 * frameWidth());
+		return size;
+	}
+};
+
 class View : public ViewBase, public MetadataObjObserverInterface
 {
 	Q_OBJECT
@@ -194,8 +203,10 @@ private:
 
 private Q_SLOTS:
 	void on_selected_signal_changed(int index);
-	void on_selected_classes_changed();
+	void on_class_selector_triggered();
+//	void on_selected_classes_changed();
 	void on_hide_hidden_changed(bool checked);
+	void on_sort_changed(bool checked);
 	void on_view_mode_changed(int index);
 
 	void on_annotation_visibility_changed();
@@ -223,10 +234,11 @@ private:
 
 	QToolBar* toolbar_;
 	QComboBox* signal_selector_;
-	QListWidget* class_selector_;
-	PopupToolButton class_selector_button_;
+	ClassListWidget* class_selector_;
+	PopupToolButton* class_selector_button_;
 	QCheckBox* hide_hidden_cb_;
 	QComboBox* view_mode_selector_;
+	QCheckBox* sort_cb_;
 
 	QToolButton* save_button_;
 	QAction* save_action_;

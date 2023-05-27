@@ -27,6 +27,7 @@
 
 #include <pv/session.hpp>
 
+
 namespace pv::popups {
 
 TabularClasses::TabularClasses(Session &session, QWidget *parent, QListWidget* list) :
@@ -37,7 +38,7 @@ TabularClasses::TabularClasses(Session &session, QWidget *parent, QListWidget* l
 	// Create the layout
 	setLayout(&layout_);
 
-	layout_.addItem(new QSpacerItem(0, 15, QSizePolicy::Expanding, QSizePolicy::Expanding));
+//	layout_.addItem(new QSpacerItem(0, 15, QSizePolicy::Expanding, QSizePolicy::Expanding));
 	layout_.addRow(list_);
 }
 
