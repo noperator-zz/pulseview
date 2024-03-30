@@ -1666,14 +1666,19 @@ void DecodeSignal::annotation_callback(srd_proto_data *pdata, void *decode_signa
 	deque<const Annotation*>& all_annotations =
 		ds->segments_[ds->current_segment_id_].all_annotations;
 
-	if (all_annotations.empty()) {
-		all_annotations.emplace_back(ann);
-	} else {
-		const uint64_t new_ann_len = (pdata->end_sample - pdata->start_sample);
-		bool ann_has_earlier_start = (pdata->start_sample < all_annotations.back()->start_sample());
-		bool ann_is_longer = (new_ann_len >
-			(all_annotations.back()->end_sample() - all_annotations.back()->start_sample()));
+	all_annotations.emplace_back(ann);
 
+	// TODO: Is all this really needed? When do we care that they're sorted by start sample?
+	//  Tabular decoder can do its own sorting, but even the unsorted view is absolutely acceptable.
+
+//	if (all_annotations.empty()) {
+//		all_annotations.emplace_back(ann);
+//	} else {
+//		const uint64_t new_ann_len = (pdata->end_sample - pdata->start_sample);
+//		bool ann_has_earlier_start = (pdata->start_sample < all_annotations.back()->start_sample());
+//		bool ann_is_longer = (new_ann_len >
+//			(all_annotations.back()->end_sample() - all_annotations.back()->start_sample()));
+//
 //		if (ann_has_earlier_start && ann_is_longer) {
 //			bool ann_has_same_start;
 //			auto it = all_annotations.end();
@@ -1696,31 +1701,31 @@ void DecodeSignal::annotation_callback(srd_proto_data *pdata, void *decode_signa
 //			//  due to this random insertion.
 //			all_annotations.emplace(it, ann);
 //		} else
-			all_annotations.emplace_back(ann);
-	}
-
-	// When emplace_annotation() inserts instead of appends an annotation,
-	// the pointers in all_annotations that follow the inserted annotation and
-	// point to annotations for this row are off by one and must be updated
-	if (&(row_data.annotations().back()) != ann) {
-		// Search backwards until we find the annotation we just added
-		auto row_it = row_data.annotations().end();
-		auto all_it = all_annotations.end();
-		do {
-			all_it--;
-			if ((*all_it)->row_data() == &row_data)
-				row_it--;
-		} while (&(*row_it) != ann);
-
-		// Update the annotation addresses for this row's annotations until the end
-		do {
-			if ((*all_it)->row_data() == &row_data) {
-				*all_it = &(*row_it);
-				row_it++;
-			}
-			all_it++;
-		} while (all_it != all_annotations.end());
-	}
+//			all_annotations.emplace_back(ann);
+//	}
+//
+//	// When emplace_annotation() inserts instead of appends an annotation,
+//	// the pointers in all_annotations that follow the inserted annotation and
+//	// point to annotations for this row are off by one and must be updated
+//	if (&(row_data.annotations().back()) != ann) {
+//		// Search backwards until we find the annotation we just added
+//		auto row_it = row_data.annotations().end();
+//		auto all_it = all_annotations.end();
+//		do {
+//			all_it--;
+//			if ((*all_it)->row_data() == &row_data)
+//				row_it--;
+//		} while (&(*row_it) != ann);
+//
+//		// Update the annotation addresses for this row's annotations until the end
+//		do {
+//			if ((*all_it)->row_data() == &row_data) {
+//				*all_it = &(*row_it);
+//				row_it++;
+//			}
+//			all_it++;
+//		} while (all_it != all_annotations.end());
+//	}
 }
 
 void DecodeSignal::binary_callback(srd_proto_data *pdata, void *decode_signal)

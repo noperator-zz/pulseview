@@ -83,7 +83,7 @@ namespace toolbars {
 
 const uint64_t MainBar::MinSampleCount = 100ULL;
 const uint64_t MainBar::MaxSampleCount = 1000000000000ULL;
-const uint64_t MainBar::DefaultSampleCount = 1000000;
+const uint64_t MainBar::DefaultSampleCount = MaxSampleCount;
 
 const char *MainBar::SettingOpenDirectory = "MainWindow/OpenDirectory";
 const char *MainBar::SettingSaveDirectory = "MainWindow/SaveDirectory";

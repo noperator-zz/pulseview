@@ -125,31 +125,34 @@ const Annotation* RowData::emplace_annotation(srd_proto_data *pdata)
 
 	const Annotation* result = nullptr;
 
-	// We insert the annotation in a way so that the annotation list
-	// is sorted by start sample. Otherwise, we'd have to sort when
-	// painting, which is expensive
+	// TODO: Is all this really needed? When do we care that they're sorted by start sample?
+	//  Maybe for range export from trace view
 
-	if (pdata->start_sample < prev_ann_start_sample_) {
-		// Find location to insert the annotation at
-
-		auto it = annotations_.end();
-		do {
-			it--;
-		} while ((it->start_sample() > pdata->start_sample) && (it != annotations_.begin()));
-
-		// Allow inserting at the front
-		if (it != annotations_.begin())
-			it++;
-
-		it = annotations_.emplace(it, pdata->start_sample, pdata->end_sample,
-			storage_entry, ann_class_id, this);
-		result = &(*it);
-	} else {
+//	// We insert the annotation in a way so that the annotation list
+//	// is sorted by start sample. Otherwise, we'd have to sort when
+//	// painting, which is expensive
+//
+//	if (pdata->start_sample < prev_ann_start_sample_) {
+//		// Find location to insert the annotation at
+//
+//		auto it = annotations_.end();
+//		do {
+//			it--;
+//		} while ((it->start_sample() > pdata->start_sample) && (it != annotations_.begin()));
+//
+//		// Allow inserting at the front
+//		if (it != annotations_.begin())
+//			it++;
+//
+//		it = annotations_.emplace(it, pdata->start_sample, pdata->end_sample,
+//			storage_entry, ann_class_id, this);
+//		result = &(*it);
+//	} else {
 		annotations_.emplace_back(pdata->start_sample, pdata->end_sample,
 			storage_entry, ann_class_id, this);
 		result = &(annotations_.back());
 		prev_ann_start_sample_ = pdata->start_sample;
-	}
+//	}
 
 	return result;
 }
