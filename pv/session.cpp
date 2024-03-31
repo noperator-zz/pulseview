@@ -33,6 +33,8 @@
 #include "session.hpp"
 #include "util.hpp"
 
+#include "binding/binding.hpp"
+
 #include "data/analog.hpp"
 #include "data/analogsegment.hpp"
 #include "data/decode/decoder.hpp"
@@ -247,6 +249,23 @@ void Session::save_hwdevice(QSettings &settings) const
 		else
 			settings.remove(QString::fromUtf8(key.c_str()));
 	}
+
+	settings.beginGroup("config_options");
+
+	// Note: These are the current configuration options. They may differ from the
+	//  options used when the capture was taken.
+	shared_ptr<sigrok::Device> sr_dev = device_->device();
+	for (const ConfigKey* key : sr_dev->config_keys()) {
+		if (!sr_dev->config_check(key, sigrok::Capability::GET) || !sr_dev->config_check(key, sigrok::Capability::SET)) {
+			continue;
+		}
+		const string key_name = key->identifier();
+		auto gvar = sr_dev->config_get(key);
+
+		QString val = binding::Binding::print_gvariant(gvar);
+		settings.setValue(QString::fromStdString(key_name), val);
+	}
+	settings.endGroup();
 
 	settings.endGroup();
 }
