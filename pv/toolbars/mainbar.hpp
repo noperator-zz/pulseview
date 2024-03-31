@@ -94,6 +94,8 @@ public:
 
 	void reset_device_selector();
 
+	void refresh_device_config();
+
 	QAction* action_new_view() const;
 	QAction* action_open() const;
 	QAction* action_save() const;

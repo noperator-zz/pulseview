@@ -429,6 +429,27 @@ shared_ptr<devices::Device> Session::restore_hwdevice(QSettings &settings)
 
 	if (device) {
 		set_device(device);
+
+		shared_ptr<sigrok::Device> sr_dev = device->device();
+
+		settings.beginGroup("config_options");
+
+		for (const QString& key_name : settings.childKeys()) {
+			const ConfigKey* key = ConfigKey::get_by_identifier(key_name.toStdString());
+			if (!key)
+				continue;
+
+			string value_str = settings.value(key_name).toString().toStdString();
+			if (!value_str.empty()) {
+				VariantBase value = key->parse_string(value_str);
+				sr_dev->config_set(key, value);
+			}
+		}
+		settings.endGroup();
+
+		if (main_bar_) {
+			main_bar_->refresh_device_config();
+		}
 	}
 
 	settings.endGroup();

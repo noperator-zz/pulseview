@@ -326,6 +326,11 @@ void MainBar::reset_device_selector()
 	device_selector_.reset();
 }
 
+void MainBar::refresh_device_config()
+{
+	update_device_config_widgets();
+}
+
 QAction* MainBar::action_open() const
 {
 	return action_open_;
