@@ -400,6 +400,41 @@ void Session::save_settings(QSettings &settings) const
 	}
 }
 
+shared_ptr<devices::Device> Session::restore_hwdevice(QSettings &settings)
+{
+	shared_ptr<devices::Device> device;
+	map<string, string> dev_info;
+	list<string> key_list;
+
+	// Re-select last used device if possible but only if it's not demo
+	settings.beginGroup("device");
+	key_list.emplace_back("vendor");
+	key_list.emplace_back("model");
+	key_list.emplace_back("version");
+	key_list.emplace_back("serial_num");
+	key_list.emplace_back("connection_id");
+
+	for (string& key: key_list) {
+		const QString k = QString::fromStdString(key);
+		if (!settings.contains(k))
+			continue;
+
+		const string value = settings.value(k).toString().toStdString();
+		if (!value.empty())
+			dev_info.insert(make_pair(key, value));
+	}
+
+	if (dev_info.count("model") > 0)
+		device = device_manager_.find_device_from_info(dev_info);
+
+	if (device) {
+		set_device(device);
+	}
+
+	settings.endGroup();
+	return device;
+}
+
 void Session::restore_setup(QSettings &settings)
 {
 	// Restore channels
@@ -500,34 +535,7 @@ void Session::restore_settings(QSettings &settings)
 	const QString device_type = settings.value("device_type").toString();
 
 	if (device_type == "hardware") {
-		map<string, string> dev_info;
-		list<string> key_list;
-
-		// Re-select last used device if possible but only if it's not demo
-		settings.beginGroup("device");
-		key_list.emplace_back("vendor");
-		key_list.emplace_back("model");
-		key_list.emplace_back("version");
-		key_list.emplace_back("serial_num");
-		key_list.emplace_back("connection_id");
-
-		for (string key : key_list) {
-			const QString k = QString::fromStdString(key);
-			if (!settings.contains(k))
-				continue;
-
-			const string value = settings.value(k).toString().toStdString();
-			if (!value.empty())
-				dev_info.insert(make_pair(key, value));
-		}
-
-		if (dev_info.count("model") > 0)
-			device = device_manager_.find_device_from_info(dev_info);
-
-		if (device)
-			set_device(device);
-
-		settings.endGroup();
+		device = restore_hwdevice(settings);
 
 		if (device)
 			restore_setup(settings);
