@@ -900,6 +900,7 @@ void MainBar::on_actionRestoreSetup_triggered()
 		return;
 
 	QSettings settings_storage(file_name, QSettings::IniFormat);
+	session_.restore_hwdevice(settings_storage);
 	session_.restore_setup(settings_storage);
 }
 
