@@ -258,6 +258,8 @@ void Session::save_setup(QSettings &settings) const
 	int decode_signal_count = 0;
 	int gen_signal_count = 0;
 
+	save_hwdevice(settings);
+
 	// Save channels and decoders
 	for (const shared_ptr<data::SignalBase>& base : signalbases_) {
 #ifdef ENABLE_DECODE
