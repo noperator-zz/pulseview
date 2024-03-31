@@ -218,6 +218,40 @@ bool Session::data_saved() const
 	return data_saved_;
 }
 
+void Session::save_hwdevice(QSettings &settings) const
+{
+	map<string, string> dev_info;
+	list<string> key_list;
+
+	if (device_) {
+		shared_ptr<devices::HardwareDevice> hw_device =
+			dynamic_pointer_cast< devices::HardwareDevice >(device_);
+
+		if (hw_device) {
+			settings.setValue("device_type", "hardware");
+			settings.beginGroup("device");
+
+			key_list.emplace_back("vendor");
+			key_list.emplace_back("model");
+			key_list.emplace_back("version");
+			key_list.emplace_back("serial_num");
+			key_list.emplace_back("connection_id");
+
+			dev_info = device_manager_.get_device_info(device_);
+
+			for (string& key : key_list) {
+				if (dev_info.count(key))
+					settings.setValue(QString::fromUtf8(key.c_str()),
+							QString::fromUtf8(dev_info.at(key).c_str()));
+				else
+					settings.remove(QString::fromUtf8(key.c_str()));
+			}
+
+			settings.endGroup();
+		}
+	}
+}
+
 void Session::save_setup(QSettings &settings) const
 {
 	int i;
@@ -307,36 +341,9 @@ void Session::save_setup(QSettings &settings) const
 
 void Session::save_settings(QSettings &settings) const
 {
-	map<string, string> dev_info;
-	list<string> key_list;
+	save_hwdevice(settings);
 
 	if (device_) {
-		shared_ptr<devices::HardwareDevice> hw_device =
-			dynamic_pointer_cast< devices::HardwareDevice >(device_);
-
-		if (hw_device) {
-			settings.setValue("device_type", "hardware");
-			settings.beginGroup("device");
-
-			key_list.emplace_back("vendor");
-			key_list.emplace_back("model");
-			key_list.emplace_back("version");
-			key_list.emplace_back("serial_num");
-			key_list.emplace_back("connection_id");
-
-			dev_info = device_manager_.get_device_info(device_);
-
-			for (string& key : key_list) {
-				if (dev_info.count(key))
-					settings.setValue(QString::fromUtf8(key.c_str()),
-							QString::fromUtf8(dev_info.at(key).c_str()));
-				else
-					settings.remove(QString::fromUtf8(key.c_str()));
-			}
-
-			settings.endGroup();
-		}
-
 		// Having saved the data to srzip overrides the current device. This is
 		// a crappy hack around the fact that saving e.g. an imported file to
 		// srzip would require changing the underlying libsigrok device

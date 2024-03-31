@@ -234,6 +234,8 @@ private:
 	void signal_new_segment();
 	void signal_segment_completed();
 
+	void save_hwdevice(QSettings &settings) const;
+
 #ifdef ENABLE_FLOW
 	bool on_gst_bus_message(const Glib::RefPtr<Gst::Bus>& bus, const Glib::RefPtr<Gst::Message>& message);
 
