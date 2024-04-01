@@ -22,6 +22,12 @@
 cmake_minimum_required(VERSION 2.8.12)
 set (CMAKE_VERBOSE_MAKEFILE 1)
 
+set (CMAKE_C_COMPILER_WORKS 1)
+set (CMAKE_CXX_COMPILER_WORKS 1)
+#set (HAVE_STD_CXX_17 1)
+
+message($ENV{PATH})
+
 project(pulseview C CXX)
 
 include(GNUInstallDirs)
@@ -569,6 +575,7 @@ add_definitions(-Wall -Wextra)
 add_definitions(${REQUIRED_STD_CXX_FLAGS})
 
 add_definitions(-DBOOST_MATH_DISABLE_FLOAT128=1)
+add_definitions(-fext-numeric-literals)
 if(WIN32)
 	add_definitions(-Wa,-mbig-obj -O3)
 endif()
@@ -676,7 +683,7 @@ if(WIN32 AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-fuse-ld=mold")
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-fuse-ld=gold")
 #===============================================================================
 #= Installation
 #-------------------------------------------------------------------------------
