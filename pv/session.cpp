@@ -442,7 +442,12 @@ shared_ptr<devices::Device> Session::restore_hwdevice(QSettings &settings)
 			string value_str = settings.value(key_name).toString().toStdString();
 			if (!value_str.empty()) {
 				VariantBase value = key->parse_string(value_str);
-				sr_dev->config_set(key, value);
+				try {
+					sr_dev->config_set(key, value);
+				} catch (Error&) {
+					// The device may not support the option.
+					continue;
+				}
 			}
 		}
 		settings.endGroup();
