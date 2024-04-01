@@ -205,7 +205,7 @@ bool StoreSession::start()
 		setup_file_name.append(".pvs");
 
 		QSettings settings_storage(setup_file_name, QSettings::IniFormat);
-		session_.save_setup(settings_storage);
+		session_.save_setup(settings_storage, sample_range_);
 	}
 
 	return true;

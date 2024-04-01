@@ -270,11 +270,14 @@ void Session::save_hwdevice(QSettings &settings) const
 	settings.endGroup();
 }
 
-void Session::save_setup(QSettings &settings) const
+void Session::save_setup(QSettings &settings, pair<uint64_t, uint64_t> sample_range) const
 {
 	int i;
 	int decode_signal_count = 0;
 	int gen_signal_count = 0;
+	// TODO if selection_only, maybe don't save time_items that are outside the range
+	const bool selection_only = (sample_range.first != sample_range.second);
+	const pv::util::Timestamp time_offset {selection_only ? ((double)sample_range.first / get_samplerate()) : 0};
 
 	save_hwdevice(settings);
 
@@ -323,6 +326,7 @@ void Session::save_setup(QSettings &settings) const
 	int view_id = 0;
 	i = 0;
 	for (const shared_ptr<views::ViewBase>& vb : views_) {
+		const bool main_view = (view_id == 0);
 		shared_ptr<views::trace::View> tv = dynamic_pointer_cast<views::trace::View>(vb);
 		if (tv) {
 			for (const shared_ptr<views::trace::TimeItem>& time_item : tv->time_items()) {
@@ -336,7 +340,7 @@ void Session::save_setup(QSettings &settings) const
 					settings.beginGroup("meta_obj" + QString::number(i++));
 					settings.setValue("type", "time_marker");
 					settings.setValue("assoc_view", view_id);
-					GlobalSettings::store_timestamp(settings, "time", flag->time());
+					GlobalSettings::store_timestamp(settings, "time", flag->time() - time_offset);
 					settings.setValue("text", flag->get_text());
 					settings.endGroup();
 				}
@@ -347,8 +351,8 @@ void Session::save_setup(QSettings &settings) const
 				settings.setValue("type", "selection");
 				settings.setValue("assoc_view", view_id);
 				const shared_ptr<views::trace::CursorPair> cp = tv->cursors();
-				GlobalSettings::store_timestamp(settings, "start_time", cp->first()->time());
-				GlobalSettings::store_timestamp(settings, "end_time", cp->second()->time());
+				GlobalSettings::store_timestamp(settings, "start_time", cp->first()->time() - time_offset);
+				GlobalSettings::store_timestamp(settings, "end_time", cp->second()->time() - time_offset);
 				settings.endGroup();
 			}
 		}

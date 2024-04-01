@@ -157,7 +157,7 @@ public:
 	 */
 	bool data_saved() const;
 
-	void save_setup(QSettings &settings) const;
+	void save_setup(QSettings &settings, pair<uint64_t, uint64_t> sample_range={0,0}) const;
 	void save_settings(QSettings &settings) const;
 	shared_ptr<devices::Device> restore_hwdevice(QSettings &settings);
 	void restore_setup(QSettings &settings);
