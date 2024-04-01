@@ -465,7 +465,7 @@ shared_ptr<devices::Device> Session::restore_hwdevice(QSettings &settings)
 	return device;
 }
 
-void Session::restore_setup(QSettings &settings)
+void Session::restore_setup(QSettings &settings, bool with_time_items)
 {
 	// Restore channels
 	for (shared_ptr<data::SignalBase> base : signalbases_) {
@@ -541,13 +541,13 @@ void Session::restore_setup(QSettings &settings)
 
 		const QString type = settings.value("type").toString();
 
-		if ((type == "time_marker") && tv) {
+		if ((type == "time_marker") && tv && with_time_items) {
 			Timestamp ts = GlobalSettings::restore_timestamp(settings, "time");
 			shared_ptr<views::trace::Flag> flag = tv->add_flag(ts);
 			flag->set_text(settings.value("text").toString());
 		}
 
-		if ((type == "selection") && tv) {
+		if ((type == "selection") && tv && with_time_items) {
 			Timestamp start = GlobalSettings::restore_timestamp(settings, "start_time");
 			Timestamp end = GlobalSettings::restore_timestamp(settings, "end_time");
 			tv->set_cursors(start, end);

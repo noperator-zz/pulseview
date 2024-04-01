@@ -901,7 +901,7 @@ void MainBar::on_actionRestoreSetup_triggered()
 
 	QSettings settings_storage(file_name, QSettings::IniFormat);
 	session_.restore_hwdevice(settings_storage);
-	session_.restore_setup(settings_storage);
+	session_.restore_setup(settings_storage, false);
 }
 
 void MainBar::on_actionConnect_triggered()

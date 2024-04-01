@@ -160,7 +160,7 @@ public:
 	void save_setup(QSettings &settings, pair<uint64_t, uint64_t> sample_range={0,0}) const;
 	void save_settings(QSettings &settings) const;
 	shared_ptr<devices::Device> restore_hwdevice(QSettings &settings);
-	void restore_setup(QSettings &settings);
+	void restore_setup(QSettings &settings, bool with_time_items=true);
 	void restore_settings(QSettings &settings);
 
 	/**
