@@ -346,7 +346,7 @@ void Session::save_setup(QSettings &settings, pair<uint64_t, uint64_t> sample_ra
 				}
 			}
 
-			if (tv->cursors_shown()) {
+			if (tv->cursors_shown() && (!selection_only || !main_view)) {
 				settings.beginGroup("meta_obj" + QString::number(i++));
 				settings.setValue("type", "selection");
 				settings.setValue("assoc_view", view_id);
