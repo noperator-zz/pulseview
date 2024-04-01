@@ -23,7 +23,7 @@ project(PV_MANUAL)
 
 # External dependencies, required and optional tools.
 find_program(ASCIIDOCTOR_EXECUTABLE NAMES asciidoctor)
-find_program(ASCIIDOCTOR_PDF_EXECUTABLE NAMES asciidoctor-pdf)
+find_program(ASCIIDOCTOR_PDF_EXECUTABLE NAMES asciidoctor-pdf-notfound)
 
 # Tunables.
 set(STYLES_DIR "asciidoctor-stylesheet-factory/stylesheets")
